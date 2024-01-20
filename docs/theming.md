@@ -6,6 +6,12 @@ position: 0.999
 
 # Theming
 
+There are a few ways to update the theme for MDXEditor: changing colors, tweaking styles, or custom override styles.
+
+For information for changing content styling, see [./content-styling.md].
+
+## Changing colors
+
 The editor UI (toolbar, dialogs, etc) colors and fonts are defined as CSS variables attached to the editor root element.
 The color variables follow the [Radix semantic aliasing](https://www.radix-ui.com/colors/docs/overview/aliasing#semantic-aliases) convention.
 
@@ -94,3 +100,16 @@ export function CustomTheming() {
   )
 }
 ```
+
+## Tweaking Styles
+
+A few additional classes may be specified to the MDXEditor component. They include:
+
+- `className` - merged in with the classes on the root element of the editor, this property is intended primarily for overriding CSS variables for re-coloring.
+- `contentEditableClassName` - merged in with the classes for the editable region, this property may be used to tweak styles for elements in the content editable area, such as lists and blockquotes. See [./content-styling.md] for a
+
+## Custom override styles
+
+For an even more flexible editor experience, the root styles can be entirely replaced. This places MDXEditor into as near-as-possible headless state; your app will be responsible for styling every component, including the editors for official plugins.
+
+[lexical-theming]: https://lexical.dev/docs/getting-started/theming

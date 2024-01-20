@@ -15,11 +15,13 @@ import {
   markdown$,
   setMarkdown$,
   rootEditor$,
-  insertMarkdown$
+  insertMarkdown$,
+  theme$
 } from './plugins/core'
 import { RealmPlugin, RealmWithPlugins } from './RealmWithPlugins'
 import { useCellValues, usePublisher, useRealm } from '@mdxeditor/gurx'
 
+import { EditorThemeClasses } from 'lexical'
 import { lexicalTheme } from './styles/lexicalTheme'
 import { LexicalComposer } from '@lexical/react/LexicalComposer.js'
 import styles from './styles/ui.module.css'
@@ -30,8 +32,12 @@ import classNames from 'classnames'
 import { ToMarkdownOptions } from './exportMarkdownFromLexical'
 import { noop } from './utils/fp'
 import { IconKey } from './plugins/core/Icon'
+import { Theme } from './theme'
 
-const LexicalProvider: React.FC<{ children: JSX.Element | string | (JSX.Element | string)[] }> = ({ children }) => {
+const LexicalProvider: React.FC<{ theme?: EditorThemeClasses; children: JSX.Element | string | (JSX.Element | string)[] }> = ({
+  children,
+  theme
+}) => {
   const [initialRootEditorState, nodes, readOnly] = useCellValues(initialRootEditorState$, usedLexicalNodes$, readOnly$)
   return (
     <LexicalComposer
@@ -39,7 +45,7 @@ const LexicalProvider: React.FC<{ children: JSX.Element | string | (JSX.Element 
         editable: !readOnly,
         editorState: initialRootEditorState,
         namespace: 'MDXEditor',
-        theme: lexicalTheme,
+        theme: theme ?? lexicalTheme,
         nodes: nodes,
         onError: (error: Error) => {
           throw error
@@ -52,12 +58,13 @@ const LexicalProvider: React.FC<{ children: JSX.Element | string | (JSX.Element 
 }
 
 const RichTextEditor: React.FC = () => {
-  const [contentEditableClassName, composerChildren, topAreaChildren, editorWrappers, placeholder] = useCellValues(
+  const [contentEditableClassName, composerChildren, topAreaChildren, editorWrappers, placeholder, theme] = useCellValues(
     contentEditableClassName$,
     composerChildren$,
     topAreaChildren$,
     editorWrappers$,
-    placeholder$
+    placeholder$,
+    theme$
   )
   return (
     <>
@@ -67,9 +74,17 @@ const RichTextEditor: React.FC = () => {
       <RenderRecurisveWrappers wrappers={editorWrappers}>
         <div className={classNames(styles.rootContentEditableWrapper)}>
           <RichTextPlugin
-            contentEditable={<ContentEditable className={classNames(styles.contentEditable, contentEditableClassName)} />}
+            contentEditable={
+              <ContentEditable className={classNames(theme?.contentEditable ?? styles.contentEditable, contentEditableClassName)} />
+            }
             placeholder={
-              <div className={classNames(styles.contentEditable, styles.placeholder, contentEditableClassName)}>
+              <div
+                className={classNames(
+                  theme?.contentEditable ?? styles.contentEditable,
+                  theme?.placeholder ?? styles?.placeholder,
+                  contentEditableClassName
+                )}
+              >
                 <p>{placeholder}</p>
               </div>
             }
@@ -152,9 +167,12 @@ const EditorRootElement: React.FC<{ children: React.ReactNode; className?: strin
   const editorRootElementRef = React.useRef<HTMLDivElement | null>(null)
   const setEditorRootElementRef = usePublisher(editorRootElementRef$)
 
+  const [theme] = useCellValues(theme$)
+  const editorRoot = theme?.editorRoot ?? styles.editorRoot
+
   React.useEffect(() => {
     const popupContainer = document.createElement('div')
-    popupContainer.classList.add(styles.editorRoot)
+    popupContainer.classList.add(editorRoot)
     popupContainer.classList.add(styles.popupContainer)
     if (className) {
       className.split(' ').forEach((c) => {
@@ -167,7 +185,7 @@ const EditorRootElement: React.FC<{ children: React.ReactNode; className?: strin
     return () => {
       popupContainer.remove()
     }
-  }, [className, editorRootElementRef, setEditorRootElementRef])
+  }, [className, editorRootElementRef, setEditorRootElementRef, editorRoot])
   return <div className={classNames(styles.editorRoot, styles.editorWrapper, className, 'mdxeditor')}>{children}</div>
 }
 
@@ -207,10 +225,18 @@ const Methods: React.FC<{ mdxRef: React.ForwardedRef<MDXEditorMethods> }> = ({ m
  */
 export interface MDXEditorProps {
   /**
+   * the Lexical editor theme to apply to elements created for markdown.
+   */
+  lexicalTheme?: EditorThemeClasses
+  /**
    * the CSS class to apply to the content editable element of the editor.
    * Use this to style the various content elements like lists and blockquotes.
    */
   contentEditableClassName?: string
+  /**
+   *
+   */
+  theme?: Theme
   /**
    * The markdown to edit. Notice that this is read only when the component is mounted.
    * To change the component content dynamically, use the `MDXEditorMethods.setMarkdown` method.
@@ -276,6 +302,7 @@ export const MDXEditor = React.forwardRef<MDXEditorMethods, MDXEditorProps>((pro
       plugins={[
         corePlugin({
           contentEditableClassName: props.contentEditableClassName ?? '',
+          theme: props.theme,
           initialMarkdown: props.markdown,
           onChange: props.onChange ?? noop,
           onBlur: props.onBlur ?? noop,
@@ -291,7 +318,7 @@ export const MDXEditor = React.forwardRef<MDXEditorMethods, MDXEditorProps>((pro
       ]}
     >
       <EditorRootElement className={props.className}>
-        <LexicalProvider>
+        <LexicalProvider theme={props.lexicalTheme}>
           <RichTextEditor />
         </LexicalProvider>
       </EditorRootElement>

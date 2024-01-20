@@ -37,6 +37,7 @@ import { mdxJsxFromMarkdown, mdxJsxToMarkdown } from 'mdast-util-mdx-jsx'
 import { mdxJsx } from 'micromark-extension-mdx-jsx'
 import { mdxMd } from 'micromark-extension-mdx-md'
 import React from 'react'
+import { Theme } from '../../theme'
 import { LexicalConvertOptions, exportMarkdownFromLexical } from '../../exportMarkdownFromLexical'
 import {
   ImportPoint,
@@ -70,6 +71,7 @@ import { Directives } from 'mdast-util-directive'
 export * from './MdastHTMLNode'
 export * from './GenericHTMLNode'
 export * from './Icon'
+import styles from '../../styles/ui.module.css'
 
 /**
  * A function that subscribes to Lexical editor updates or events, and retursns an unsubscribe function.
@@ -113,6 +115,11 @@ export const activeEditor$ = Cell<LexicalEditor | null>(null)
  * @group Core
  */
 export const contentEditableClassName$ = Cell('')
+
+/**
+ * Holds the style classes for the current theme
+ */
+export const theme$ = Cell<Theme>(styles as Theme)
 
 /**
  * Holds the readOnly state of the editor.
@@ -813,6 +820,7 @@ export const addActivePlugin$ = Appender(activePlugins$)
 export const corePlugin = realmPlugin<{
   initialMarkdown: string
   contentEditableClassName: string
+  theme?: Theme
   placeholder?: React.ReactNode
   autoFocus: boolean | { defaultSelection?: 'rootStart' | 'rootEnd'; preventScroll?: boolean | undefined }
   onChange: (markdown: string) => void
@@ -848,6 +856,7 @@ export const corePlugin = realmPlugin<{
 
       [addComposerChild$]: SharedHistoryPlugin,
       [contentEditableClassName$]: params?.contentEditableClassName,
+      [theme$]: params?.theme,
       [toMarkdownOptions$]: params?.toMarkdownOptions,
       [autoFocus$]: params?.autoFocus,
       [placeholder$]: params?.placeholder,
